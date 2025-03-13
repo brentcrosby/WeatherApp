@@ -8,44 +8,32 @@
 import SwiftUI
 
 struct WeatherDetail: View {
+    
+    @State private var isNight = false
+    @ObservedObject var viewModel: WeatherViewModel
+    
     var body: some View {
         ZStack {
-            BackgroundView()
+            BackgroundView(isNight: .constant(viewModel.weatherData.current.isNight))
             VStack {
-                Text("Sacramento, CA")
-                    .font(.largeTitle)
-                    .foregroundStyle(.white)
-                    .padding()
-                VStack(spacing: 10) {
-                    Image(systemName: "sun.max.fill")
-                        .renderingMode(.original)
-                        .resizable()
-                        .aspectRatio(contentMode: .fit)
-                        .frame(width: 180, height: 180)
-                    Text("76°")
-                        .font(.system(size: 80, weight: .medium))
-                        .foregroundStyle(.white)
-                }
-                .padding(.bottom, 40)
-                
-                HStack (spacing: 16){
-                    WeatherDayView(dayOfWeek: "TUE", imageName: "cloud.sun.fill", temperature: 72)
-                    WeatherDayView(dayOfWeek: "TUE", imageName: "cloud.sun.fill", temperature: 72)
-                    WeatherDayView(dayOfWeek: "TUE", imageName: "cloud.sun.fill", temperature: 72)
-                    WeatherDayView(dayOfWeek: "TUE", imageName: "cloud.sun.fill", temperature: 72)
-                    WeatherDayView(dayOfWeek: "TUE", imageName: "cloud.sun.fill", temperature: 72)
-                    
+                CityTextView(cityName: viewModel.weatherData.current.cityName)
+                MainWeatherStatusView(imageName: viewModel.weatherData.current.iconName,
+                                      temperature: viewModel.weatherData.current.temperature)
+                HStack(spacing: 16) {
+                    ForEach(viewModel.weatherData.forecast, id: \.dayOfWeek) { forecast in
+                        WeatherDayView(dayOfWeek: forecast.dayOfWeek,
+                                       imageName: forecast.iconName,
+                                       temperature: forecast.temperature)
+                    }
                 }
                 Spacer()
                 
                 Button {
-                    print("tapped")
+                    isNight.toggle()
                 } label: {
-                    Text("Change Day Time")
-                        .frame(width: 280, height: 50)
-                        .background(Color.white)
-                        .font(.system(size: 17, weight: .bold))
-                        .cornerRadius(50)
+                    WeatherButton(title: "Change Day Time",
+                                  textColor: .black,
+                                  backgroundColor: .white)
                 }
                 
                 Spacer()
@@ -55,7 +43,7 @@ struct WeatherDetail: View {
 }
 
 #Preview {
-    WeatherDetail()
+    WeatherDetail(viewModel: WeatherViewModel())
 }
 
 struct WeatherDayView: View {
@@ -82,10 +70,48 @@ struct WeatherDayView: View {
 }
 
 struct BackgroundView: View {
+    
+    @Binding var isNight: Bool
+    
     var body: some View {
-        LinearGradient(colors: [.blue, Color("lightBlue")],
+        LinearGradient(colors: [isNight ? .black : .blue,
+                                isNight ? .gray : Color("lightBlue")],
                        startPoint: .topLeading,
                        endPoint: .bottomTrailing)
         .ignoresSafeArea(.all)
     }
 }
+
+struct CityTextView: View {
+    
+    var cityName: String
+    
+    var body: some View {
+        Text(cityName)
+            .font(.largeTitle)
+            .foregroundStyle(.white)
+            .padding()
+    }
+}
+
+struct MainWeatherStatusView: View {
+    
+    var imageName: String
+    var temperature: Int
+    
+    var body: some View {
+        VStack(spacing: 10) {
+            Image(systemName: imageName)
+                .renderingMode(.original)
+                .resizable()
+                .aspectRatio(contentMode: .fit)
+                .frame(width: 180, height: 180)
+            Text("\(temperature)°")
+                .font(.system(size: 80, weight: .medium))
+                .foregroundStyle(.white)
+        }
+        .padding(.bottom, 40)
+    }
+}
+
+
